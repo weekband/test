@@ -1,0 +1,21 @@
+# Python 파일 및 캐시
+*.pyc
+__pycache__/
+
+# 가상환경
+.venv/
+
+# 데이터베이스 파일 (SQLite 등)
+*.db
+*.sqlite3
+
+# 환경 변수 파일
+.env
+
+# IDE 설정
+.vscode/
+.idea/
+
+# Docker 관련
+*.env
+*.log
