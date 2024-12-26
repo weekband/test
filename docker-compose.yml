@@ -3,14 +3,14 @@ version: "3.8"
 services:
   app:
     build:
-      context: ./app
-      dockerfile: Dockerfile
-    image: my-fastapi-app:latest  # 이미지 이름과 태그 설정
+      context: ./
+      dockerfile: app/Dockerfile  # Dockerfile 경로
+    image: my-fastapi-app:latest  # 빌드된 이미지 이름과 태그를 명시적으로 설정
     container_name: fastapi-app
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: "mysql+pymysql://hbmoon:zjavjsl15@db:3306/mydb"
+      DATABASE_URL: "mysql+pymysql://hbmoon:12312322@db:3306/mydb"  # MySQL 연결 정보
     depends_on:
       - db
 
@@ -26,6 +26,7 @@ services:
       - "3306:3306"  # MySQL 포트
     volumes:
       - mysql_data:/var/lib/mysql
+
 
 volumes:
   mysql_data:  # MySQL 데이터 볼륨
