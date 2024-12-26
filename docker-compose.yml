@@ -18,10 +18,10 @@ services:
     image: mysql:8.0
     container_name: first-mysql-db
     environment:
-      MYSQL_ROOT_PASSWORD: zjavjsl15
+      MYSQL_ROOT_PASSWORD: 12312322
       MYSQL_DATABASE: mydb
       MYSQL_USER: hbmoon
-      MYSQL_PASSWORD: zjavjsl15
+      MYSQL_PASSWORD: 12312322
     ports:
       - "3306:3306"  # MySQL 포트
     volumes:
