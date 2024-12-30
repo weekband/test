@@ -9,6 +9,8 @@ services:
     container_name: fastapi-app
     ports:
       - "8000:8000"
+    volumes:
+      - /Users/munhyobeom/PycharmProjects/test/app/data
     environment:
       DATABASE_URL: "mysql+pymysql://hbmoon:12312322@db:3306/mydb"  # MySQL 연결 정보
     depends_on:

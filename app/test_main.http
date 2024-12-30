@@ -9,4 +9,7 @@ GET http://localhost:8000/hello/moon
 Accept: application/json
 
 ###
-GET http://localhost:8000/backtest
+GET http://localhost:8000/backtest/moving_average
+
+###
+GET http://localhost:8000/backtest/rsi_volatility

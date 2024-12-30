@@ -3,3 +3,4 @@ uvicorn==0.21.1
 ccxt
 Pandas
 matplotlib
+seaborn

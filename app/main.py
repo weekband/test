@@ -1,11 +1,14 @@
+from strategies import apply_strategy_rsi_volatility, apply_strategy_moving_average
 from logging_manager import logger
 from fastapi import FastAPI
-
+from typing import Callable, Dict
 
 import ccxt
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib import rc
 from datetime import datetime, timedelta
+import seaborn as sns
 
 # 로깅 설정 초기화
 
@@ -136,14 +139,70 @@ def backtest(df, initial_balance=1_000_000):
     logger.info("백테스팅 완료: 최종 포트폴리오 가치 = %.2f KRW", final_value)
     return df
 
-@app.get("/backtest")
-async def run_backtest():
+
+# 데이터 시각화 함수
+import os
+import matplotlib.pyplot as plt
+import seaborn as sns
+from matplotlib import rc
+
+def visualize_data(df):
+    """
+    데이터를 히스토그램 및 라인 차트로 시각화
+    """
+
+    # 한글 폰트 설정 (설치된 폰트를 사용해야 함)
+    rc('font', family='NanumGothic')  # 예: 나눔고딕 (설치 필요)
+
+    logger.info("Visualizing data distribution...")
+    plt.figure(figsize=(12, 6))
+
+    # 히스토그램 (종가 분포)
+    plt.subplot(2, 1, 1)
+    sns.histplot(df["close"], bins=50, kde=True, color="blue")
+    plt.title("종가 분포")
+    plt.xlabel("종가")
+    plt.ylabel("빈도")
+
+    # 종가 시간대별 변동 추이
+    plt.subplot(2, 1, 2)
+    plt.plot(df.index, df["close"], label="Close Price", color="green")
+    plt.title("시간에 따른 종가 변동 추이")
+    plt.xlabel("시간")
+    plt.ylabel("종가")
+    plt.legend()
+
+    plt.tight_layout()
+
+    # 데이터 저장 디렉토리 확인 및 생성
+    save_dir = "/app/data"
+    if not os.path.exists(save_dir):
+        logger.info(f"Directory {save_dir} does not exist. Creating it...")
+        os.makedirs(save_dir)
+
+    # 파일 저장
+    save_path = os.path.join(save_dir, "visualization.png")
+    plt.savefig(save_path)  # 시각화 결과 저장
+    logger.info(f"Visualization saved at {save_path}")
+    plt.close()
+
+STRATEGIES: Dict[str, Callable] = {
+    "moving_average": apply_strategy_moving_average,
+    "rsi_volatility": apply_strategy_rsi_volatility,
+}
+
+@app.get("/backtest/{strategy_name}")
+async def run_backtest(strategy_name: str):
+    """
+    백테스팅 수행
+    :param strategy_name: 사용할 전략의 이름 (moving_average 등)
+    :return: 백테스팅 결과
+    """
+    if strategy_name not in STRATEGIES:
+        return {"error": f"Invalid strategy name '{strategy_name}'. Available strategies: {list(STRATEGIES.keys())}"}
+
     # CCXT를 이용한 거래소 초기화
     exchange = ccxt.upbit()
-
-    # 현재 시간 기준으로 데이터 가져오기
-    current_time = datetime.utcnow()  # UTC 시간
-    to_time = current_time.isoformat() + "Z"  # ISO 8601 형식
 
     # 과거 데이터 가져오기
     df = fetch_all_historical_data(
@@ -151,16 +210,15 @@ async def run_backtest():
         symbol="KRW-DOGE",
         timeframe="1m",
         total_limit=1000,
-        start_time="2024-12-01T00:00:00Z"  # 요청 시작 시점
+        start_time="2024-12-01T00:00:00Z"
     )
 
-    # 로그로 출력
-    logger.info("Fetched Historical Data:")
-    logger.info(df.head(10))  # 상위 10개 데이터 출력
-    logger.info(f"Total rows fetched: {len(df)}")
+    # 데이터 분포 시각화
+    visualize_data(df)
 
-    # 이동 평균 전략 적용
-    df = apply_strategy(df, short_window=5, long_window=15)
+    # 선택된 전략 적용
+    strategy_function = STRATEGIES[strategy_name]
+    df = strategy_function(df)
 
     # 백테스팅 수행
     df = backtest(df)
@@ -171,7 +229,9 @@ async def run_backtest():
     returns = (final_value - initial_value) / initial_value * 100
 
     return {
+        "strategy": strategy_name,
         "initial_portfolio_value": f"{initial_value:.2f} KRW",
         "final_portfolio_value": f"{final_value:.2f} KRW",
-        "total_returns": f"{returns:.2f}%"
+        "total_returns": f"{returns:.2f}%",
+        "visualization_saved_at": "data_visualization.png",
     }
